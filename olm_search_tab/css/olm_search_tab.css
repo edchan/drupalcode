@@ -1,0 +1,272 @@
+/* Dropdown hover */
+#block-olm-search-tab-olm-search-tab-cities-block {
+  float: left;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropbtn {
+  background-color: #a8a8a8;
+  color: #fff;
+  padding: 5px 20px;
+  font-size: 10px;
+  border: none;
+  border-radius: 20px;
+  margin: 15px 0px 0px 20px;
+  min-width: 75px;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 10003;
+  width: 288px;
+  box-sizing: border-box;
+  margin-top: 10px;
+  margin-left: 20px;
+  padding: 5px;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown-content a {
+  color: #666;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: inline-block;
+  width: 85px;
+  box-sizing: border-box;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown-content a:hover {
+  background-color: transparent;
+  text-decoration: none;
+  color: #e30613;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown-content:before {
+  content: ".";
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  width: 35px;
+  height: 35px;
+  border-left: 35px solid transparent;
+  border-right: 35px solid transparent;
+  border-bottom: 35px solid #f1f1f1;
+  color: #f1f1f1;
+  z-index: -1;
+}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown:hover .dropdown-content {display: block;}
+
+#block-olm-search-tab-olm-search-tab-cities-block .dropdown:hover .dropbtn {background-color: #ccc;}
+
+/*********************
+ * JLL Mobile styles
+ *********************/
+@media (max-width: 767px) {
+  #block-olm-search-tab-olm-search-tab-block,
+  #block-olm-search-tab-olm-search-tab-cities-block {
+    display: none;
+  }
+}
+
+/*********************
+ * JLL Tablet styles
+ *********************/
+@media (max-width: 959px){
+#block-olm-search-tab-olm-search-tab-cities-block .dropbtn {
+    margin: 15px 20px 0px 20px;
+  }
+}
+
+@media (min-width: 768px) {
+
+  #block-olm-home-carousel-home-carousel-section .home-banner-carousel .home-page-carousel-bacground-wrapper {
+    width: 730px!important;
+  }
+
+  #block-olm-home-carousel-home-carousel-section .home-banner-carousel .home-carousel-description-box{
+    right: 0px;
+    left: auto!important;
+  }
+
+  #block-olm-home-carousel-home-carousel-section .home-banner-carousel .inner-message-box {
+    text-align: right;
+    width: 300px!important;
+    padding: 0!important;
+  }
+
+  .front .home-carousel-description-box .inner-message-box .home-banner-footer {
+    width: 300px!important;
+  }
+
+  #block-olm-home-carousel-home-carousel-section .home-banner-carousel .home-carousel-description-box h1 {
+      font-size: 2rem!important;
+  }
+
+  .search-wrapper-home {
+    max-width: 730px;
+    position: absolute!important;
+    top: 80px;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 0;
+  }
+
+  /* Block */
+  #block-olm-search-tab-olm-search-tab-block {
+    width: 420px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .tab-content {
+    background: #fff;
+    padding: 20px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .tab-label {
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .tab-list-line {
+    border-bottom: 1px solid #f7f7f7;
+    padding-bottom: 5px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .tab-list li {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 5px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .opt-size .tab-list li {
+    margin-right: 0;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .nav-tabs a {
+    background: #ccc;
+    opacity: 1;
+    border-radius: 0;
+    color: #fff;
+    border: 1px solid #ccc;
+    margin: 0;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .nav-tabs .active a {
+    background: #e30613;
+    border: 1px solid #e30613;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .options a {
+    color: #666;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .options a:hover {
+    text-decoration: none;
+    color: #e30613;
+  }
+
+  .opt-size a {
+    border-top: 10px solid #ccc;
+    display: inline-block;
+    width: 56px;
+  }
+
+  .opt-size a:hover {
+    border-top: 10px solid #e30613;
+    color: #666!important;
+  }
+
+  .opt-size span {
+    margin-left: -15px;
+    font-size: 11px;
+  }
+
+  .opt-size li:first-child span {
+    margin: 0;
+  }
+
+  .opt-size li:last-child:after {
+    content: "∞";
+    margin-left: -10px;
+    color: #999;
+  }
+
+  /* search form */
+  #block-olm-search-tab-olm-search-tab-block .olm-search-form {
+    background: #ddd;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -20px;
+    padding: 20px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .collapse-search-form-button {
+    display: none;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .Search__Button--submit {
+    border-radius: 0;
+    border: none;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .map-button {
+    background: url(/sites/all/modules/custom/olm_search_tab/images/map-search_2x.png);
+    background-size: 77px 30px;
+    background-repeat: no-repeat;
+    font-size: 11px;
+    height: 32px;
+    line-height: 21px;
+    border-radius: 0;
+    margin-left: 5px;
+    border: none;
+    color: #666;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .map-button:hover {
+    color: #e30613;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .Search__Input--tags {
+    padding: 0;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .Search__Input--tags-input,
+  #block-olm-search-tab-olm-search-tab-block .Search__Input--tags-container
+  {
+    width: 230px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .Search__Input--text {
+    width: 225px;
+  }
+
+  #block-olm-search-tab-olm-search-tab-block .Search__Group--First {
+    width: unset!important;
+    margin: unset!important;
+    vertical-align: unset!important;
+  }
+
+  .front .SearchForm__input {
+    width: 230px!important;
+  }
+
+}
+
+/*********************
+ * JLL Desktop styles
+ *********************/
+@media (min-width: 960px) {
+  #block-olm-home-carousel-home-carousel-section .home-banner-carousel .home-page-carousel-bacground-wrapper {
+    width: 942px!important;
+  }
+
+  .search-wrapper-home {
+    max-width: 942px;
+  }
+}

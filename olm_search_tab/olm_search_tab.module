@@ -1,0 +1,410 @@
+<?php
+
+/**
+ * @file
+ * Render a search tabbed search box.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function olm_search_tab_menu() {
+  $items = array();
+
+  $items['admin/config/olm/search_tab'] = array(
+    'title' => t('Search Tab Configuration'),
+    'description' => t('Configure OLM Search Tab settings.'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer olm settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('olm_search_tab_settings_form'),
+    'file' => 'olm_search_tab.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function olm_search_tab_block_view($delta='') {
+  $cities = _olm_search_tab_get_searchable_cities();
+  $default_city = _olm_search_tab_get_default_city($cities);
+  $districts = olm_search_tab_get_district_with_properties($default_city[key($default_city)]['id']);
+  $all_positioning = _olm_search_tab_get_all_positioning();
+  $unit_sizes = _olm_search_tab_get_unit_sizes();
+
+  $block = array();
+
+  switch($delta) {
+    case 'olm_search_tab_block':
+      $block['content'] = array(
+          '#markup' => _olm_search_tab_block_view($cities, $default_city, $districts, $all_positioning, $unit_sizes),
+        );
+      break;
+    case 'olm_search_tab_cities_block':
+      $block['content'] = array(
+          '#markup' => _olm_search_tab_cities_block_view($cities, $default_city[key($default_city)]['name']),
+          '#attached' => array(
+            'css' => array(
+              drupal_get_path('module', 'olm_search_tab') . '/css/olm_search_tab.css',
+            ),
+            'js' => array(
+              drupal_get_path('module', 'olm_search_tab') . '/js/olm_search_tab.js',
+            ),
+          ),
+        );
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Builds the block contents.
+ *
+ * @param $cities
+ * @param $default_city
+ * @param $districts
+ * @param $all_positioning
+ * @param $unit_sizes
+ *
+ * @see _olm_search_tab_block_view()
+ */
+function _olm_search_tab_block_view($cities, $default_city, $districts, $all_positioning, $unit_sizes) {
+  // Expose default_city to js.
+  drupal_add_js(array(
+    'olm' => array(
+      'default_city_name' => key($default_city),
+    ),
+  ), 'setting');
+
+
+  // Get property type.
+  $property_type = json_decode(olm_search_property_type_get());
+
+  // Get main property type.
+  foreach ($property_type as $key => $value) {
+    foreach ($value as $v) {
+      $index = str_replace("/", "_", strtolower($v->{'DescriptionValue'}));
+      $main_property_type[$index] = $key;
+    }
+  }
+
+  $olm_search_tab = '';
+
+  return theme(
+    'olm_search_tab_block',
+    array(
+      'property_type' => $property_type,
+      'default_city' => $default_city,
+      'main_property_type' => $main_property_type,
+      'districts' => $districts,
+      'all_positioning' => $all_positioning,
+      'unit_sizes' => $unit_sizes
+    )
+  );
+}
+
+/**
+ * Custom function for _olm_search_tab_cities_block_view.
+ */
+function _olm_search_tab_cities_block_view($cities, $default_city) {
+  return theme(
+    'olm_search_tab_cities_block',
+    array(
+      'cities' => $cities,
+      'default_city' => $default_city
+    )
+  );
+}
+
+
+function olm_search_tab_theme() {
+  return array(
+    'olm_search_tab_block' => array(
+      'template' => 'templates/block--olm-search-tab--olm-search-tab-block',
+      'variables' => array(
+        'property_type' => NULL,
+        'default_city' => NULL,
+        'main_property_type' => NULL,
+        'districts' => NULL,
+        'all_positioning' => NULL,
+        'unit_sizes' => NULL
+      )
+    ),
+    'olm_search_tab_cities_block' => array(
+      'template' => 'templates/block--olm-search-tab--olm-search-tab-cities-block',
+      'variables' => array(
+        'cities' => NULL,
+        'default_city' => NULL
+      )
+    ),
+  );
+}
+
+/**
+ * Get default city.
+ */
+function _olm_search_tab_get_default_city($cities) {
+  $params = drupal_get_query_parameters();
+  if (isset($params['city'])) {
+    $default_city[strtolower($params['city'])] = $cities[strtolower($params['city'])];
+  }
+
+  if (!$default_city) {
+    $homepage_default_city = variable_get('homepage_default_city', 'Shanghai');
+    $default_city[strtolower($homepage_default_city)] = $cities[strtolower($homepage_default_city)];
+  }
+
+  return $default_city;
+}
+
+/**
+ * Get seachable cities.
+ */
+function _olm_search_tab_get_searchable_cities() {
+  module_load_include('inc', 'olm_city', 'olm_city.func');
+  $cities = olm_city_get_active_cities();
+
+  return $cities
+    ->mapWithKeys(function ($city) {
+      global $language;
+      return [strtolower($city->Description) => $language->language !== 'en' ? array('id'=>$city->CityID, 'name'=>$city->DescriptionLocal) : array('id'=>$city->CityID, 'name'=>$city->Description)];
+    })->toArray();
+}
+
+/**
+ * Get districts with properties.
+ *
+ * @param $city_id
+ */
+function olm_search_tab_get_district_with_properties($city_id) {
+  if ($cache = cache_get('olm_search_tab_district_with_properties')) {
+    $districts = $cache->data;
+  } else {
+    $districts = olm_search_tab_get_district_with_properties_from_azure();
+
+    cache_set('olm_search_tab_district_with_properties', $districts, 'cache');
+  }
+
+  $city_district = array();
+  foreach ($districts as $district) {
+    if ($city_id == $district['CityID']) {
+      $city_district[] = $district;
+    }
+  }
+
+  return $city_district;
+}
+
+/**
+ * Get districts with properties from Azure.
+ */
+function olm_search_tab_get_district_with_properties_from_azure() {
+  module_load_include('inc', 'olm_core', 'olm_core.database');
+
+  $country_id = variable_get('olm_azure_db_params_country_id', 5);
+  $service_line = variable_get('olm_azure_db_params_service_line', 1);
+
+  $results = olm_core_db_query('EXEC OLMPROP.GetDistrictListWithOLMProperty ?, ?', [
+    $country_id,
+    $service_line,
+  ]);
+
+  $districts = array();
+
+  foreach ($results as $result) {
+    $districts[] = $result;
+  }
+
+  return $districts;
+}
+
+/**
+ * Get all positioning.
+ */
+function _olm_search_tab_get_all_positioning() {
+  if ($cache = cache_get('olm_search_tab_all_positioning')) {
+    $all_positioning = $cache->data;
+  } else {
+    $all_positioning = olm_search_tab_get_all_positioning_from_azure();
+
+    cache_set('olm_search_tab_all_positioning', $all_positioning, 'cache');
+  }
+
+  return $all_positioning;
+}
+
+/**
+ * Get all positioning from Azure.
+ */
+function olm_search_tab_get_all_positioning_from_azure() {
+  module_load_include('inc', 'olm_core', 'olm_core.database');
+
+  $results = olm_core_db_query('EXEC OLMPROP.GetPositioningList');
+
+  $all_positioning = array();
+
+  foreach ($results as $result) {
+    $all_positioning[] = $result;
+  }
+
+  return $all_positioning;
+}
+
+/**
+ * Get unit sizes from settings.
+ */
+function _olm_search_tab_get_unit_sizes() {
+  $olm_search_tab_unit_size = explode(',', variable_get('olm_search_tab_unit_size', '0,100,200,300,500,1000,1200'));
+  $index = 0;
+  foreach ($olm_search_tab_unit_size as $value) {
+    $index++;
+    if ($olm_search_tab_unit_size[$index]) {
+      $unit_sizes[$value] = $value.'-'.$olm_search_tab_unit_size[$index];
+    }
+  }
+  return $unit_sizes;
+}
+
+/**
+ * Checj district custom order from CMS settings.
+ *
+ * @param $districts
+ * @param $main_property_type
+ * @param $city_id
+ */
+function _olm_search_tab_check_district_custom_order($districts, $main_property_type, $city_id) {
+  $cms_setting_districts = explode(',', variable_get('olm_search_tab_districts_'.$main_property_type.'_'.$city_id));
+  if (count($cms_setting_districts) > 0) {
+    $count = 0;
+    $ordered_districts = array();
+    foreach ($districts as $district) {
+      if (in_array($district['Description'], $cms_setting_districts)) {
+        $id = array_search($district['Description'], $cms_setting_districts);
+        $ordered_districts[$id] = $district;
+      } else {
+        $ordered_districts[$count+1000] = $district;
+      }
+      $count++;
+    }
+    ksort($ordered_districts);
+    return $ordered_districts;
+  }
+
+  return $districts;
+}
+
+/**
+ * Search form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function olm_search_tab_form($form, &$form_state) {
+  $form['#action'] = 'q';
+
+  $form['#theme_wrappers'] = array('form');
+
+  // Add form class.
+  $form['#attributes']['class'] = [
+    'form-inline',
+    'olm-search-form',
+  ];
+
+  $form['group1'] = [
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'Search__Group',
+        'Search__Group--First',
+      ),
+    ),
+  ];
+
+  $form['group1']['keyword'] = [
+    '#type' => 'textfield',
+    '#attributes' => [
+      'placeholder' => t('District, Street, Building, Positioning'),
+      'class' => ['form-control', 'Search__Input--text', 'typeahead'],
+      'id' => 'search-keyword',
+      'size' => '10',
+    ],
+    '#prefix' => '<olm-keyword class="form-group"
+      :searched-keyword-text="\'' . addslashes($searched_keyword) . '\'"
+      :searched-district-text="\'' . addslashes($searched_district) . '\'"
+      :searched-street-text="\'' . addslashes($searched_street) . '\'"
+      :searched-positioning-text="\'' . addslashes($searched_positioning) . '\'">',
+    '#suffix' => '</olm-keyword>',
+  ];
+
+  $form['group1']['district'] = [
+    '#type' => 'hidden',
+    '#default_value' => $searched_district,
+    '#attributes' => [
+      'id' => 'search-district',
+    ],
+  ];
+
+  $form['group1']['street'] = [
+    '#type' => 'hidden',
+    '#default_value' => $searched_street,
+    '#attributes' => [
+      'id' => 'search-street',
+    ],
+  ];
+
+  $form['group1']['positioning'] = [
+    '#type' => 'hidden',
+    '#default_value' => $searched_positioning,
+    '#attributes' => [
+      'id' => 'search-positioning',
+    ],
+  ];
+
+  $cities = _olm_search_tab_get_searchable_cities();
+  $default_city = _olm_search_tab_get_default_city($cities);
+
+  // For city.
+  $form['group1']['city'] = [
+    '#type' => 'hidden',
+    '#default_value' => key($default_city),
+    '#attributes' => [
+      'class' => 'Search__Select--city',
+    ],
+  ];
+
+  $form['group3'] = [
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'Search__Group',
+        'Search__Group--Third',
+      ),
+    ),
+  ];
+
+  $form['group3']['submit'] = [
+    '#type' => 'hidden',
+    '#value' => t('Search'),
+    '#prefix' => '<olm-submit-button></olm-submit-button>',
+  ];
+
+  $form['group3']['map'] = [
+    '#markup' => '<a href="'. url('q', array('query'=> array('mode' => 'map-view'))) .'" class="btn map-button">'.t('Map Search').'</a>',
+  ];
+
+  drupal_add_js([
+    'olmSearch' => [
+      'path' => OLM_SEARCH_BASE_PATH,
+    ],
+  ], 'setting');
+
+  $form['#attached']['js'][] = drupal_get_path('module', 'olm_search') . '/lib/typeahead.bundle.min.js';
+  $form['#attached']['js'][] = drupal_get_path('module', 'olm_search') . '/lib/select2.min.js';
+
+  return $form;
+}
